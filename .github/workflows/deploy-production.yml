@@ -23,9 +23,7 @@ jobs:
         NODE_ENV: production
 
     - name: Build project
-      run: |
-        bunx svelte-kit sync
-        bunx svelte-kit build
+      run: bun run build
       env:
         PORT: ${{ secrets.APP_PORT }}
 
