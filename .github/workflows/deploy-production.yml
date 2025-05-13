@@ -60,8 +60,8 @@ jobs:
 
           cd /var/www/html/${{ secrets.APP_NAME }}
 
-          # Replace PORT in ecosystem.config.cjs
-          sed -i "s/PORT: [0-9]*/PORT: ${{ secrets.APP_PORT }}/g" ecosystem.config.cjs
+          # Pass APP_PORT dynamically
+          APP_PORT=${{ secrets.APP_PORT }} pm2 reload ecosystem.config.cjs --env production --update-env
 
           bun install --production
 
