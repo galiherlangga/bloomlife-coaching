@@ -2,15 +2,13 @@ module.exports = {
   apps: [
     {
       name: "bloomlife",
-      script: "build/index.js", // or whatever your build output is
-      interpreter: "bun",
+      script: "build/index.js",   // your built output
+      interpreter: "bun",         // bun is the runtime
+      interpreter_args: "run",    // tells bun to actually run it
       env: {
-        PORT: 3000,
-        NODE_ENV: "production"
-      },
-      env_production: {
         NODE_ENV: "production",
-      },
+        PORT: 3000
+      }
     }
   ]
 };
