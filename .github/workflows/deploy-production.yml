@@ -23,7 +23,9 @@ jobs:
         NODE_ENV: production
 
     - name: Build project
-      run: bun run build
+      run: |
+        bunx svelte-kit sync
+        bunx svelte-kit build
       env:
         PORT: ${{ secrets.APP_PORT }}
 
@@ -63,9 +65,8 @@ jobs:
           # Pass APP_PORT dynamically
           APP_PORT=${{ secrets.APP_PORT }} pm2 reload ecosystem.config.cjs --env production --update-env
 
-          bun install --production
+          bun install
 
-          pm2 reload ecosystem.config.cjs --env production --update-env
           pm2 save
           pm2 list
 
