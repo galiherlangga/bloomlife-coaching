@@ -45,7 +45,7 @@ jobs:
         SOURCE: "./"
         TARGET: ${{ secrets.APP_DIR }}
         ARGS: '-avz --delete'
-        EXCLUDE: 'node_modules,.env,.git,.github'
+        EXCLUDE: 'node_modules,.env,.git,.github,.ssh'
 
     - name: Configure and Restart Service
       uses: appleboy/ssh-action@v1
