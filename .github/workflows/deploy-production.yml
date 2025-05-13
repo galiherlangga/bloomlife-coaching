@@ -56,14 +56,18 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          source ~/.bashrc
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          nvm use 22
+
+          export BUN_INSTALL="$HOME/.bun"
+          export PATH="$BUN_INSTALL/bin:$PATH"
 
           cd /var/www/html/${{ secrets.APP_NAME }}
 
-          # Pass APP_PORT dynamically
-          APP_PORT=${{ secrets.APP_PORT }} pm2 reload ecosystem.config.cjs --env production --update-env
-
           bun install
+
+          APP_PORT=${{ secrets.APP_PORT }} pm2 reload ecosystem.config.cjs --env production --update-env
 
           pm2 save
           pm2 list
