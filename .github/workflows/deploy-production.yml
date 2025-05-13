@@ -23,7 +23,7 @@ jobs:
     - name: Build project
       run: bun run build
       env:
-        PORT: ${{ secrets.APP_PORT }}  # Pass port during build if needed
+        PORT: ${{ secrets.APP_PORT }}
 
     # SSH Key setup and test before deploy
     - name: Setup SSH and Verify Access
@@ -45,7 +45,7 @@ jobs:
         SOURCE: "./"
         TARGET: ${{ secrets.APP_DIR }}
         ARGS: '-avz --delete'
-        EXCLUDE: 'node_modules, .env, .git, .github'
+        EXCLUDE: 'node_modules,.env,.git,.github'
 
     - name: Configure and Restart Service
       uses: appleboy/ssh-action@v1
@@ -54,27 +54,19 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          # Load environment variables
           source ~/.bashrc
-          export PATH="$PATH:/home/deployer/.bun/bin:/home/deployer/.local/bin"
+          export PATH="$PATH:/home/${{ secrets.SSH_USERNAME }}/.bun/bin:/home/${{ secrets.SSH_USERNAME }}/.local/bin"
 
-          # Navigate to app directory
           cd ${{ secrets.APP_DIR }}
 
-          # Update port in ecosystem config
+          # Replace PORT in ecosystem.config.js
           sed -i "s/PORT: [0-9]*/PORT: ${{ secrets.APP_PORT }}/g" ecosystem.config.js
 
-          # Ensure directory structure
-          mkdir -p ~/.pm2/logs
-          touch ~/.pm2/logs/app-error.log
-
-          # Install production dependencies
           bun install --production
 
-          # PM2 process management
           pm2 reload ecosystem.config.js --env production --update-env
           pm2 save
           pm2 list
 
-          # Verify service status
+          echo "App responded with:"
           curl -sI http://localhost:${{ secrets.APP_PORT }} || true
