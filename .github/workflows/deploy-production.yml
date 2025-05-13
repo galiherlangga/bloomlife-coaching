@@ -19,6 +19,8 @@ jobs:
 
     - name: Install dependencies
       run: bun install
+      env:
+        NODE_ENV: production
 
     - name: Build project
       run: bun run build
@@ -58,12 +60,12 @@ jobs:
 
           cd /var/www/html/${{ secrets.APP_NAME }}
 
-          # Replace PORT in ecosystem.config.js
-          sed -i "s/PORT: [0-9]*/PORT: ${{ secrets.APP_PORT }}/g" ecosystem.config.js
+          # Replace PORT in ecosystem.config.cjs
+          sed -i "s/PORT: [0-9]*/PORT: ${{ secrets.APP_PORT }}/g" ecosystem.config.cjs
 
           bun install --production
 
-          pm2 reload ecosystem.config.js --env production --update-env
+          pm2 reload ecosystem.config.cjs --env production --update-env
           pm2 save
           pm2 list
 
