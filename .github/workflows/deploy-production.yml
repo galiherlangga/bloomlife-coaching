@@ -43,9 +43,9 @@ jobs:
         REMOTE_HOST: ${{ secrets.SSH_HOST }}
         REMOTE_USER: ${{ secrets.SSH_USERNAME }}
         SOURCE: "./"
-        TARGET: ${{ secrets.APP_DIR }}
+        TARGET: /var/www/html/${{ secrets.APP_NAME }}
         ARGS: '-avz --delete'
-        EXCLUDE: 'node_modules,.env,.git,.github,.ssh'
+        EXCLUDE: 'node_modules,.env,.git,.github,.ssh,.bashrc,.cache'
 
     - name: Configure and Restart Service
       uses: appleboy/ssh-action@v1
@@ -54,10 +54,9 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          source ~/.bashrc
-          export PATH="$PATH:/home/${{ secrets.SSH_USERNAME }}/.bun/bin:/home/${{ secrets.SSH_USERNAME }}/.local/bin"
+          export PATH="$HOME/.bun/bin:$HOME/.local/bin:$HOME/bin:$PATH"
 
-          cd ${{ secrets.APP_DIR }}
+          cd /var/www/html/${{ secrets.APP_NAME }}
 
           # Replace PORT in ecosystem.config.js
           sed -i "s/PORT: [0-9]*/PORT: ${{ secrets.APP_PORT }}/g" ecosystem.config.js
