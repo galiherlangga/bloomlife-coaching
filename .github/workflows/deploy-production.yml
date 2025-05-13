@@ -1,49 +1,69 @@
-name: Deploy Bloomlife to Production
+name: Deploy SvelteKit App
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: bun install
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: latest
 
-      - name: Build the project
-        run: bun run build
+    - name: Install dependencies
+      run: bun install
 
-      - name: Deploy to VPS
-        uses: easingthemes/ssh-deploy@main
-        with:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          REMOTE_HOST: ${{ secrets.SSH_HOST }}
-          REMOTE_USER: ${{ secrets.SSH_USERNAME }}
-          SOURCE: "./"
-          TARGET: ${{ secrets.SVELTE_APP_DIR }}
-          ARGS: '-avz --delete'
-          EXCLUDE: 'node_modules, .git, .env'
+    - name: Build project
+      run: bun run build
+      env:
+        PORT: ${{ secrets.APP_PORT }}  # Pass port during build if needed
 
-      - name: Update Port and Restart
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ${{ secrets.SVELTE_APP_DIR }}
-            export APP_PORT=${{ secrets.APP_PORT }}
-            bun install --production
-            pm2 reload ecosystem.config.js --env production --update-env
-            pm2 save
+    - name: Deploy to VPS
+      uses: easingthemes/ssh-deploy@main
+      with:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        REMOTE_HOST: ${{ secrets.SSH_HOST }}
+        REMOTE_USER: ${{ secrets.SSH_USERNAME }}
+        SOURCE: "./"
+        TARGET: ${{ secrets.APP_DIR }}
+        ARGS: '-avz --delete'
+        EXCLUDE: 'node_modules, .env, .git, .github'
+
+    - name: Configure and Restart Service
+      uses: appleboy/ssh-action@v1
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # Load environment variables
+          source ~/.bashrc
+          export PATH="$PATH:/home/deployer/.bun/bin:/home/deployer/.local/bin"
+
+          # Navigate to app directory
+          cd ${{ secrets.APP_DIR }}
+
+          # Update port in ecosystem config
+          sed -i "s/PORT: [0-9]*/PORT: ${{ secrets.APP_PORT }}/g" ecosystem.config.js
+
+          # Ensure directory structure
+          mkdir -p ~/.pm2/logs
+          touch ~/.pm2/logs/app-error.log
+
+          # Install production dependencies
+          bun install --production
+
+          # PM2 process management
+          pm2 reload ecosystem.config.js --env production --update-env
+          pm2 save
+          pm2 list
+
+          # Verify service status
+          curl -sI http://localhost:${{ secrets.APP_PORT }} || true
